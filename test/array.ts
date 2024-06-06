@@ -21,4 +21,16 @@ describe("UintArray", function () {
             expect(ret).to.deep.equal([6,3,2,1]);
         });
     })
+
+    describe("greedy heaviest capacity", function () {
+        it("simple greedy capacity calculation", async function () {
+            var ret = await deployedContract.greedyClusterCalculation([4,3,1,2]);
+            expect(ret).to.equal(1);
+        });
+
+        it("simple greedy capacity calculation 2", async function () {
+            var ret = await deployedContract.greedyClusterCalculation([40,3,10,222]);
+            expect(ret).to.equal(3);
+        });
+    })
 })
