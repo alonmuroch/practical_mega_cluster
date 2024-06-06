@@ -14,7 +14,7 @@ describe("Practical Mega Cluster", function () {
     });
 
     describe("Deployment", function () {
-        it("Should set the right unlockTime", async function () {
+        it("Get entities", async function () {
             var entities = await practicalMegaCluster.getEntities();
             console.log(entities)
             expect(entities.length).to.equal(6);
@@ -29,6 +29,27 @@ describe("Practical Mega Cluster", function () {
             await expect(tx)
                 .to.emit(practicalMegaCluster, "RegisteredOperator")
                 .withArgs(encodedPK);
+
+            var capacity = await practicalMegaCluster.capacity();
+            expect(capacity).to.equal(0);
+        });
+
+        it("Register operator and increase capacity", async function () {
+            const addresses = (await ethers.getSigners()).slice(0,6);
+            for (let i = 0; i < 4; i++) {
+                const {pk} = GenerateOperator();
+                const encodedPK = "0x"+encodePK(pk)
+
+                console.log("registering operator for: " + addresses[i])
+
+                const tx = practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await expect(tx)
+                    .to.emit(practicalMegaCluster, "RegisteredOperator")
+                    .withArgs(encodedPK);
+            }
+
+            var capacity = await practicalMegaCluster.capacity();
+            expect(capacity).to.equal(500);
         });
     })
 })
