@@ -2,11 +2,13 @@ pragma solidity ^0.8.9;
 
 import "./libraries/UintArray.sol";
 import "./libraries/EntityArray.sol";
+import "./libraries/Shares.sol";
 import "hardhat/console.sol";
 
 contract PracticalMegaCluster {
     using UintArray for uint[];
     using EntityArray for EntityArray.Entity[];
+    using Shares for uint;
 
 
     uint256 public constant MAX_ENTITY = 6;
@@ -40,7 +42,7 @@ contract PracticalMegaCluster {
         }
     }
 
-    // ##### operator management
+    // ##### validator management
     function registerValidator(
         uint[] memory entityIDs,
         uint64[] memory operatorIds,
@@ -72,6 +74,7 @@ contract PracticalMegaCluster {
         emit RegisteredValidator(entityIDs, sharesData.length, capacity);
     }
 
+    // ##### operator management
     function registerOperator(
         bytes calldata publicKey, uint256 fee
     ) public onlyEntity {
@@ -88,6 +91,10 @@ contract PracticalMegaCluster {
 
     // ##### Views
     function getEntities() public view returns (EntityArray.Entity[] memory) {
+        return entities;
+    }
+
+    function getShareValue() public view returns (EntityArray.Entity[] memory) {
         return entities;
     }
 }
