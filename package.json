@@ -12,6 +12,7 @@
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.8",
     "@nomicfoundation/ignition-core": "^0.15.4",
+    "@openzeppelin/hardhat-upgrades": "^3.1.1",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "hardhat-gas-reporter": "^2.2.0",

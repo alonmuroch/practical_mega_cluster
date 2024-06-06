@@ -13,6 +13,8 @@ contract PracticalMegaCluster {
 
     uint256 public constant MAX_ENTITY = 6;
     uint256 public constant NEW_OPERATOR_CAPACITY = 500;
+    uint256 public K;
+    uint256 public C0;
 
     mapping(address => uint) public entities_index;
     EntityArray.Entity[] public entities;
@@ -27,7 +29,11 @@ contract PracticalMegaCluster {
     event RegisteredOperator(bytes publicKey, uint operatorID);
     event RegisteredValidator(uint[] entities, uint count, uint newCapacity);
 
-    constructor(address[] memory _entities){
+    constructor(
+        address[] memory _entities,
+        uint _k,
+        uint _C0
+    ){
         require(_entities.length <= MAX_ENTITY,"maxed out entities");
         require(_entities.length >= 4,"min 4 entities");
 
@@ -40,6 +46,9 @@ contract PracticalMegaCluster {
                 })
             );
         }
+
+        K = _k;
+        C0 = _C0;
     }
 
     // ##### validator management
@@ -94,7 +103,7 @@ contract PracticalMegaCluster {
         return entities;
     }
 
-    function getShareValue() public view returns (EntityArray.Entity[] memory) {
-        return entities;
+    function getShareValue() public view returns (uint) {
+        return capacity.shareValue(C0, K);
     }
 }

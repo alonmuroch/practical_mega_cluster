@@ -5,11 +5,13 @@ import {anyValue} from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
 describe("Practical Mega Cluster", function () {
     let practicalMegaCluster: any;
+    const k = 2;
+    const c0 = 1000;
 
     beforeEach(async function () {
         var addresses = (await ethers.getSigners()).slice(0,6);
         const contract = await ethers.getContractFactory("PracticalMegaCluster");
-        practicalMegaCluster = await contract.deploy(addresses);
+        practicalMegaCluster = await contract.deploy(addresses, k, c0);
         await practicalMegaCluster.waitForDeployment();
     });
 
@@ -88,6 +90,62 @@ describe("Practical Mega Cluster", function () {
             await expect(tx)
                 .to.emit(practicalMegaCluster, "RegisteredValidator")
                 .withArgs([0,1,2,3],4, 496);
+        });
+
+        it("share value (under C0)", async function () {
+            const addresses = (await ethers.getSigners()).slice(0,6);
+            for (let i = 0; i < 4; i++) {
+                const {pk} = GenerateOperator();
+                const encodedPK = "0x"+encodePK(pk)
+
+                const tx = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                const reciept = await tx.wait();
+                expect(reciept.logs[0].args[0]).to.be.equal(encodedPK);
+                expect(reciept.logs[0].args[1]).to.be.equal(reciept.logs[0].args[1]);
+            }
+
+            var shareValue = await practicalMegaCluster.getShareValue();
+            expect(shareValue).to.equal(271828);
+        });
+
+        it("share value (at C0)", async function () {
+            const addresses = (await ethers.getSigners()).slice(0,6);
+            for (let i = 0; i < 4; i++) {
+                const {pk} = GenerateOperator();
+                const encodedPK = "0x"+encodePK(pk)
+
+                const tx1 = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await tx1.wait();
+                const tx2 = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await tx2.wait();
+            }
+
+            var capacity = await practicalMegaCluster.capacity();
+            expect(capacity).to.equal(1000);
+
+            var shareValue = await practicalMegaCluster.getShareValue();
+            expect(shareValue).to.equal(100000);
+        });
+
+        it("share value (> C0)", async function () {
+            const addresses = (await ethers.getSigners()).slice(0,6);
+            for (let i = 0; i < 4; i++) {
+                const {pk} = GenerateOperator();
+                const encodedPK = "0x"+encodePK(pk)
+
+                const tx1 = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await tx1.wait();
+                const tx2 = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await tx2.wait();
+                const tx3 = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await tx3.wait();
+            }
+
+            var capacity = await practicalMegaCluster.capacity();
+            expect(capacity).to.equal(1500);
+
+            var shareValue = await practicalMegaCluster.getShareValue();
+            expect(shareValue).to.equal(100000);
         });
     })
 })
