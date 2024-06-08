@@ -1,7 +1,5 @@
-import { ethers } from "hardhat";
+import hre from 'hardhat';
 import {expect} from "chai";
-import * as fs from "fs";
-import * as path from "path";
 import {initializeContract} from "./helpers/ssv";
 
 describe("SSV", function () {
@@ -17,8 +15,11 @@ describe("SSV", function () {
     });
 
     describe("Deploy", function () {
-        it("test", async function () {
+        it("validate deployment", async function () {
+            let owners = await hre.viem.getWalletClients();
+
             expect(await ssvViews.read.getNetworkValidatorsCount()).to.equal(0);
+            expect(await ssvToken.read.balanceOf([owners[0].account.address])).to.equal('1000000000000000000000');
         });
     })
 })
