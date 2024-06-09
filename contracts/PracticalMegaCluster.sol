@@ -1,15 +1,19 @@
 pragma solidity ^0.8.9;
 
+//import "ssv-network/contracts/interfaces/ISSVClusters.sol";
+import "ssv-network/contracts/interfaces/ISSVOperators.sol";
+
 import "./libraries/UintArray.sol";
 import "./libraries/EntityArray.sol";
 import "./libraries/Shares.sol";
 import "hardhat/console.sol";
 
-contract PracticalMegaCluster {
+contract PracticalMegaCluster is ISSVOperators {
     using UintArray for uint[];
     using EntityArray for EntityArray.Entity[];
     using Shares for uint;
 
+    address public ssv_network;
 
     uint256 public constant MAX_ENTITY = 6;
     uint256 public constant NEW_OPERATOR_CAPACITY = 500;
@@ -30,12 +34,15 @@ contract PracticalMegaCluster {
     event RegisteredValidator(uint[] entities, uint count, uint newCapacity);
 
     constructor(
+        address _ssv_network,
         address[] memory _entities,
         uint _k,
         uint _C0
     ){
         require(_entities.length <= MAX_ENTITY,"maxed out entities");
         require(_entities.length >= 4,"min 4 entities");
+
+        ssv_network = _ssv_network;
 
         for (uint i=0 ; i < _entities.length; i++) {
             entities_index[_entities[i]] = i;
@@ -83,21 +90,6 @@ contract PracticalMegaCluster {
         emit RegisteredValidator(entityIDs, sharesData.length, capacity);
     }
 
-    // ##### operator management
-    function registerOperator(
-        bytes calldata publicKey, uint256 fee
-    ) public onlyEntity {
-        entities[entities_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
-
-        // TODO - pass to ssv contracts
-        uint randomOperatorID = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, block.number))) % 1000;
-        operatorToEntity[randomOperatorID] = msg.sender;
-
-        capacity = entities.capacityArray().greedyClusterCalculation();
-
-        emit RegisteredOperator(publicKey,randomOperatorID);
-    }
-
     // ##### Views
     function getEntities() public view returns (EntityArray.Entity[] memory) {
         return entities;
@@ -105,5 +97,73 @@ contract PracticalMegaCluster {
 
     function getShareValue() public view returns (uint) {
         return capacity.shareValue(C0, K);
+    }
+
+    // ##### ISSVOperators
+
+    /// @notice Registers a new operator
+    /// @param publicKey The public key of the operator
+    /// @param fee The operator's fee (SSV)
+    function registerOperator(bytes calldata publicKey, uint256 fee) external onlyEntity returns (uint64) {
+        entities[entities_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
+
+        uint64 operatorID = ISSVOperators(ssv_network).registerOperator(publicKey, fee);
+        operatorToEntity[operatorID] = msg.sender;
+
+        capacity = entities.capacityArray().greedyClusterCalculation();
+
+        emit RegisteredOperator(publicKey,operatorID);
+    }
+
+    /// @notice Removes an existing operator
+    /// @param operatorId The ID of the operator to be removed
+    function removeOperator(uint64 operatorId) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Declares the operator's fee
+    /// @param operatorId The ID of the operator
+    /// @param fee The fee to be declared (SSV)
+    function declareOperatorFee(uint64 operatorId, uint256 fee) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Executes the operator's fee
+    /// @param operatorId The ID of the operator
+    function executeOperatorFee(uint64 operatorId) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Cancels the declared operator's fee
+    /// @param operatorId The ID of the operator
+    function cancelDeclaredOperatorFee(uint64 operatorId) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Reduces the operator's fee
+    /// @param operatorId The ID of the operator
+    /// @param fee The new Operator's fee (SSV)
+    function reduceOperatorFee(uint64 operatorId, uint256 fee) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Withdraws operator earnings
+    /// @param operatorId The ID of the operator
+    /// @param tokenAmount The amount of tokens to withdraw (SSV)
+    function withdrawOperatorEarnings(uint64 operatorId, uint256 tokenAmount) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Withdraws all operator earnings
+    /// @param operatorId The ID of the operator
+    function withdrawAllOperatorEarnings(uint64 operatorId) external {
+        revert("Function not implemented");
+    }
+
+    /// @notice Sets the whitelist for an operator
+    /// @param operatorId The ID of the operator
+    /// @param whitelisted The address to be whitelisted
+    function setOperatorWhitelist(uint64 operatorId, address whitelisted) external{
+        revert("Function not implemented");
     }
 }
