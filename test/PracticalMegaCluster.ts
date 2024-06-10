@@ -2,21 +2,25 @@ import { ethers } from "hardhat";
 import {expect} from "chai";
 import {GenerateOperator, encodePK} from "./helpers/operators";
 import {initializePMCContract} from "./helpers/common";
+import {bulkRegisterValidatorsData, owners} from "./helpers/ssv";
 
 describe("Practical Mega Cluster", function () {
     let practicalMegaCluster: any;
     let ssvNetwork: any;
+    let ssvToken: any;
 
     beforeEach(async function () {
         const data = await initializePMCContract();
         practicalMegaCluster = data.pmc;
         ssvNetwork = data.ssv.ssvNetwork;
+        ssvToken = data.ssv.ssvToken;
     });
 
     describe("Deployment", function () {
-        it("Get entities", async function () {
+        it("Sanity", async function () {
             var entities = await practicalMegaCluster.getEntities();
             expect(entities.length).to.equal(6);
+            expect(await ssvToken.read.balanceOf([await practicalMegaCluster.getAddress()])).to.equal(10000000000000000000n);
         });
 
         it("Register operator", async function () {
@@ -66,19 +70,41 @@ describe("Practical Mega Cluster", function () {
             expect(capacity).to.equal(500);
 
             // register validators
-            const tx = practicalMegaCluster.connect(addresses[0]).registerValidator(
-                [0,1,2,3],
+            const data = await bulkRegisterValidatorsData(
+                1,
+                4,
                 [1,2,3,4],
-                [
-                    "0x1ea356627ccfe8ad5f5f5d0852e2f746daf397bb8651eb3f660ed5b7bf63ef18",
-                    "0x1ea356627ccfe8ad5f5f5d0852e2f746daf397bb8651eb3f660ed5b7bf63ef18",
-                    "0x1ea356627ccfe8ad5f5f5d0852e2f746daf397bb8651eb3f660ed5b7bf63ef18",
-                    "0x1ea356627ccfe8ad5f5f5d0852e2f746daf397bb8651eb3f660ed5b7bf63ef18"
-                ]
+                1000000000000000n
+            )
+
+            const tx = practicalMegaCluster.connect(addresses[0]).bulkRegisterValidator(
+                data.pks,
+                data.operatorIds,
+                data.shares,
+                data.depositAmount,
+                {
+                    validatorCount: 0,
+                    networkFeeIndex: 0,
+                    index: 0,
+                    balance: 0n,
+                    active: true,
+                }
             );
             await expect(tx)
-                .to.emit(practicalMegaCluster, "RegisteredValidator")
+                .to.emit(practicalMegaCluster, "RegisteredCluster")
                 .withArgs([0,1,2,3], 4, 496);
+
+            const events = await ssvNetwork.getEvents["ValidatorAdded"]();
+            expect(events.length).to.equal(4);
+            expect(events[0].args.publicKey).to.deep.equal('0xa063fa1434f4ae9bb63488cd79e2f76dea59e0e2d6cdec7236c2bb49ffb37da37cb7966be74eca5a171f659fee7bc501');
+            expect(events[0].args.operatorIds).to.deep.equal([1,2,3,4])
+            expect(events[0].args.owner).to.deep.equal(await practicalMegaCluster.getAddress())
+            expect(events[1].args.publicKey).to.deep.equal('0x821b022611c3cdea28669683ec80a930533633fe7b3489d70fdacf68044661ee2bca1d17d3d095c05f639ebe3108784c');
+            expect(events[1].args.operatorIds).to.deep.equal([1,2,3,4])
+            expect(events[2].args.publicKey).to.deep.equal('0x88ab00343b787f87de60d1e8a552a69ab5fb3525128c53d68e78a3fe2e157bcce75e96a87e8968460087927552a3c891');
+            expect(events[2].args.operatorIds).to.deep.equal([1,2,3,4])
+            expect(events[3].args.publicKey).to.deep.equal('0x9150572051c3496a67207b4caa371dfba34f127318a7aef145ebdba6e0de506c292af31e20831b0c537ab7478508d3e9');
+            expect(events[3].args.operatorIds).to.deep.equal([1,2,3,4])
         });
 
         it("share value (under C0)", async function () {

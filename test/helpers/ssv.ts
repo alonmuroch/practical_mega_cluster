@@ -187,13 +187,11 @@ export const registerOperators = async function (ssvContract, numOperators: numb
     }
 }
 
-export const bulkRegisterValidators = async function (
-    ssvNetwork,
+export const bulkRegisterValidatorsData = async function (
     ownerId: number,
     numberOfValidators: number,
     operatorIds: number[],
     minDepositAmount: BigInt,
-    cluster: Cluster,
 ) {
     const validatorIndex = lastValidatorId;
     const pks = Array.from({ length: numberOfValidators }, (_, index) => DataGenerator.publicKey(index + validatorIndex));
@@ -204,11 +202,34 @@ export const bulkRegisterValidators = async function (
     );
     const depositAmount = minDepositAmount * BigInt(numberOfValidators);
 
-    await ssvToken.write.approve([ssvNetwork.address, depositAmount], {
+   return {
+       pks,
+       operatorIds,
+       shares,
+       depositAmount
+   }
+}
+
+export const bulkRegisterValidators = async function (
+    ssvNetwork,
+    ownerId: number,
+    numberOfValidators: number,
+    operatorIds: number[],
+    minDepositAmount: BigInt,
+    cluster: Cluster,
+) {
+    const data = await bulkRegisterValidatorsData(
+        ownerId,
+        numberOfValidators,
+        operatorIds,
+        minDepositAmount
+    )
+
+    await ssvToken.write.approve([ssvNetwork.address, data.depositAmount], {
         account: owners[ownerId].account,
     });
 
-    const result = await ssvNetwork.write.bulkRegisterValidator([pks, operatorIds, shares, depositAmount, cluster], {
+    const result = await ssvNetwork.write.bulkRegisterValidator([data.pks, operatorIds, data.shares, data.depositAmount, cluster], {
         account: owners[ownerId].account,
     });
     lastValidatorId += numberOfValidators;
@@ -217,6 +238,6 @@ export const bulkRegisterValidators = async function (
 
     return {
         args: events[0].args,
-        pks,
+        pks: data.pks
     };
 };
