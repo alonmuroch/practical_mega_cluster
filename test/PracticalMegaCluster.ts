@@ -70,9 +70,10 @@ describe("Practical Mega Cluster", function () {
             expect(capacity).to.equal(500);
 
             // register validators
+            const numberOfValidators = 10;
             const data = await bulkRegisterValidatorsData(
                 1,
-                4,
+                numberOfValidators,
                 [1,2,3,4],
                 1000000000000000n
             )
@@ -92,10 +93,10 @@ describe("Practical Mega Cluster", function () {
             );
             await expect(tx)
                 .to.emit(practicalMegaCluster, "RegisteredCluster")
-                .withArgs([0,1,2,3], 4, 496);
+                .withArgs([0,1,2,3], numberOfValidators, 500-numberOfValidators);
 
             const events = await ssvNetwork.getEvents["ValidatorAdded"]();
-            expect(events.length).to.equal(4);
+            expect(events.length).to.equal(numberOfValidators);
             expect(events[0].args.publicKey).to.deep.equal('0xa063fa1434f4ae9bb63488cd79e2f76dea59e0e2d6cdec7236c2bb49ffb37da37cb7966be74eca5a171f659fee7bc501');
             expect(events[0].args.operatorIds).to.deep.equal([1,2,3,4])
             expect(events[0].args.owner).to.deep.equal(await practicalMegaCluster.getAddress())
