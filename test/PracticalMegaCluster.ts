@@ -32,7 +32,9 @@ describe("Practical Mega Cluster", function () {
 
             await expect(tx)
                 .to.emit(practicalMegaCluster, "RegisteredOperator")
-                .withArgs(encodedPK, 1);
+                .withArgs(encodedPK, 1)
+                .and.to.emit(practicalMegaCluster, 'Transfer')
+                .withArgs('0x0000000000000000000000000000000000000000',addresses[0],73890461584 /* e^(2*1000/1000 */);
 
             var capacity = await practicalMegaCluster.capacity();
             expect(capacity).to.equal(0);
@@ -47,7 +49,9 @@ describe("Practical Mega Cluster", function () {
                 const tx = practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
                 await expect(tx)
                     .to.emit(practicalMegaCluster, "RegisteredOperator")
-                    .withArgs(encodedPK, i+1);
+                    .withArgs(encodedPK, i+1)
+                    .and.to.emit(practicalMegaCluster, 'Transfer')
+                    .withArgs('0x0000000000000000000000000000000000000000',addresses[i],73890461584 /* e^(2*1000/1000 */);
             }
 
             var capacity = await practicalMegaCluster.capacity();

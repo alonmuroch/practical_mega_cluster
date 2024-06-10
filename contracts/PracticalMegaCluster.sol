@@ -4,13 +4,14 @@ import "ssv-network/contracts/interfaces/ISSVClusters.sol";
 import "ssv-network/contracts/interfaces/ISSVOperators.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./libraries/UintArray.sol";
 import "./libraries/EntityArray.sol";
 import "./libraries/Shares.sol";
 import "hardhat/console.sol";
 
-contract PracticalMegaCluster is ISSVOperators, ISSVClusters {
+contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     using UintArray for uint[];
     using EntityArray for EntityArray.Entity[];
     using Shares for uint;
@@ -42,13 +43,17 @@ contract PracticalMegaCluster is ISSVOperators, ISSVClusters {
         address[] memory _entities,
         uint _k,
         uint _C0
-    ){
+    ) ERC20("Mega Cluster Share", "PMC") {
         require(_entities.length <= MAX_ENTITY,"maxed out entities");
         require(_entities.length >= 4,"min 4 entities");
 
+        // set globals
         ssv_network = _ssv_network;
         ssv_token = _ssv_token;
+        K = _k;
+        C0 = _C0;
 
+        // initialize entities
         for (uint i=0 ; i < _entities.length; i++) {
             entity_address_to_index[_entities[i]] = i;
 
@@ -58,9 +63,6 @@ contract PracticalMegaCluster is ISSVOperators, ISSVClusters {
                 })
             );
         }
-
-        K = _k;
-        C0 = _C0;
     }
 
     // ##### Views
@@ -78,11 +80,14 @@ contract PracticalMegaCluster is ISSVOperators, ISSVClusters {
     /// @param publicKey The public key of the operator
     /// @param fee The operator's fee (SSV)
     function registerOperator(bytes calldata publicKey, uint256 fee) external onlyEntity returns (uint64) {
-        entities[entity_address_to_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
-
+        // register operator
         uint64 operatorID = ISSVOperators(ssv_network).registerOperator(publicKey, fee);
         operator_to_entity_index[operatorID] = entity_address_to_index[msg.sender];
 
+        // mint shares before updating capacity
+        _mint(msg.sender, getShareValue());
+
+        entities[entity_address_to_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
         capacity = entities.capacityArray().greedyClusterCalculation();
 
         emit RegisteredOperator(publicKey,operatorID);
