@@ -19,8 +19,9 @@ describe("Practical Mega Cluster", function () {
     describe("Deployment", function () {
         it("Sanity", async function () {
             var entities = await practicalMegaCluster.getEntities();
+            const addresses = (await ethers.getSigners()).slice(0,6);
             expect(entities.length).to.equal(6);
-            expect(await ssvToken.read.balanceOf([await practicalMegaCluster.getAddress()])).to.equal(10000000000000000000n);
+            expect(await ssvToken.read.allowance([addresses[0].address,await practicalMegaCluster.getAddress()])).to.equal(10000000000000000000n);
         });
 
         it("Register operator", async function () {

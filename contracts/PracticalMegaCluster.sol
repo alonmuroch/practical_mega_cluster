@@ -180,6 +180,11 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         require(operatorIds.length == 4, "registering validator requires 4 entities");
         // TODO - require operators are from 4 unique entities
 
+        // transfer from user's account to contract
+        if (!IERC20(ssv_token).transferFrom(msg.sender,address(this), amount)) {
+            revert("failed to transfer SSV amount");
+        }
+
         // approve for ssv contract
         if (!IERC20(ssv_token).approve(ssv_network, amount)) {
             revert("failed to approve SSV amount");

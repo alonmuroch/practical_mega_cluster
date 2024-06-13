@@ -18,8 +18,8 @@ export const initializePMCContract = async function () {
         c0);
     await practicalMegaCluster.waitForDeployment();
 
-    // mint tokens to practicalMegaCluster
-    await ssvContractsData.ssvToken.write.mint([await practicalMegaCluster.getAddress(), 10000000000000000000n])
+    // approve tokens to practicalMegaCluster
+    await ssvContractsData.ssvToken.write.approve([await practicalMegaCluster.getAddress(), 10000000000000000000n])
 
     return {
         ssv: ssvContractsData,
