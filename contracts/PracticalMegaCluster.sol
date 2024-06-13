@@ -34,8 +34,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         _;
     }
 
-    event RegisteredOperator(bytes publicKey, uint operatorID);
-    event RegisteredCluster(uint[4] entities, uint count, uint newCapacity);
+    event CapacityUpdated(uint newCapacity);
 
     constructor(
         address _ssv_network,
@@ -90,7 +89,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         entities[entity_address_to_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
         capacity = entities.capacityArray().greedyClusterCalculation();
 
-        emit RegisteredOperator(publicKey,operatorID);
+        emit CapacityUpdated(capacity);
     }
 
     /// @notice Removes an existing operator
@@ -176,9 +175,9 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         bytes[] calldata sharesData,
         uint256 amount,
         Cluster memory cluster
-    ) external {
+    ) onlyEntity external {
         require(operatorIds.length == 4, "registering validator requires 4 entities");
-        // TODO - require operators are from 4 unique entities
+        // operators uniqueness is tested when registering validators
 
         // transfer from user's account to contract
         if (!IERC20(ssv_token).transferFrom(msg.sender,address(this), amount)) {
@@ -216,19 +215,14 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         // recalculate capacity
         capacity = entities.capacityArray().greedyClusterCalculation();
 
-        emit RegisteredCluster([
-            operator_to_entity_index[operatorIds[0]],
-            operator_to_entity_index[operatorIds[1]],
-            operator_to_entity_index[operatorIds[2]],
-            operator_to_entity_index[operatorIds[3]]
-        ], sharesData.length, capacity);
+        emit CapacityUpdated(capacity);
     }
 
     /// @notice Removes an existing validator from the SSV Network
     /// @param publicKey The public key of the validator to be removed
     /// @param operatorIds Array of IDs of operators managing the validator
     /// @param cluster Cluster associated with the validator
-    function removeValidator(bytes calldata publicKey, uint64[] memory operatorIds, Cluster memory cluster) external {
+    function removeValidator(bytes calldata publicKey, uint64[] memory operatorIds, Cluster memory cluster) onlyEntity external {
         revert("Function not implemented");
     }
 
@@ -242,7 +236,21 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         uint64[] memory operatorIds,
         Cluster memory cluster
     ) external {
-        revert("Function not implemented");
+        require(operatorIds.length == 4, "registering validator requires 4 entities");
+
+        // remove
+        ISSVClusters(ssv_network).bulkRemoveValidator(publicKeys, operatorIds, cluster);
+
+        // increase capacity
+        entities[operator_to_entity_index[operatorIds[0]]].capacity += publicKeys.length;
+        entities[operator_to_entity_index[operatorIds[1]]].capacity += publicKeys.length;
+        entities[operator_to_entity_index[operatorIds[2]]].capacity += publicKeys.length;
+        entities[operator_to_entity_index[operatorIds[3]]].capacity += publicKeys.length;
+
+        // recalculate capacity
+        capacity = entities.capacityArray().greedyClusterCalculation();
+
+        emit CapacityUpdated(capacity);
     }
 
     /**************************/
@@ -254,7 +262,26 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     /// @param operatorIds Array of IDs of operators managing the cluster
     /// @param cluster Cluster to be liquidated
     function liquidate(address owner, uint64[] memory operatorIds, Cluster memory cluster) external {
-        revert("Function not implemented");
+        require(operatorIds.length == 4, "registering validator requires 4 entities");
+
+        // liquidate
+        ISSVClusters(ssv_network).liquidate(address(this), operatorIds, cluster);
+
+        // increase capacity
+        entities[operator_to_entity_index[operatorIds[0]]].capacity += cluster.validatorCount;
+        entities[operator_to_entity_index[operatorIds[1]]].capacity += cluster.validatorCount;
+        entities[operator_to_entity_index[operatorIds[2]]].capacity += cluster.validatorCount;
+        entities[operator_to_entity_index[operatorIds[3]]].capacity += cluster.validatorCount;
+
+        // transfer from contract to user's account to contract
+        if (!IERC20(ssv_token).transfer(msg.sender, cluster.balance)) {
+            revert("failed to transfer SSV amount back to user");
+        }
+
+        // recalculate capacity
+        capacity = entities.capacityArray().greedyClusterCalculation();
+
+        emit CapacityUpdated(capacity);
     }
 
     /// @notice Reactivates a cluster
