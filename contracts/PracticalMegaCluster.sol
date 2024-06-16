@@ -10,6 +10,7 @@ import "./libraries/UintArray.sol";
 import "./libraries/EntityArray.sol";
 import "./libraries/Shares.sol";
 import "hardhat/console.sol";
+import "./EntityProxy.sol";
 
 contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     using UintArray for uint[];
@@ -53,8 +54,11 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         for (uint i=0 ; i < _entities.length; i++) {
             entity_address_to_index[_entities[i]] = i;
 
+            EntityProxy proxy = new EntityProxy(address(this), ssv_network, ssv_token);
+
             entities.push(EntityArray.Entity({
                 owner: _entities[i],
+                proxy: address(proxy),
                 capacity: 0
                 })
             );
@@ -80,14 +84,15 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     /// @param publicKey The public key of the operator
     /// @param fee The operator's fee (SSV)
     function registerOperator(bytes calldata publicKey, uint256 fee) external onlyEntity returns (uint64) {
+        uint entity_index = entity_address_to_index[msg.sender];
         // register operator
-        uint64 operatorID = ISSVOperators(ssv_network).registerOperator(publicKey, fee);
-        operator_to_entity_index[operatorID] = entity_address_to_index[msg.sender];
+        uint64 operatorID = ISSVOperators(entities[entity_index].proxy).registerOperator(publicKey, fee);
+        operator_to_entity_index[operatorID] = entity_index;
 
         // mint shares before updating capacity
         _mint(msg.sender, getShareValue());
 
-        entities[entity_address_to_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
+        entities[entity_index].capacity += NEW_OPERATOR_CAPACITY;
     }
 
     /// @notice Removes an existing operator
@@ -174,13 +179,20 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         uint256 amount,
         Cluster memory cluster
     ) onlyEntity external {
+        address proxy = entities[entity_address_to_index[msg.sender]].proxy;
+
         // transfer from user's account to contract
         if (!IERC20(ssv_token).transferFrom(msg.sender,address(this), amount)) {
             revert("failed to transfer SSV amount");
         }
 
+        // transfer to proxy
+        if (!IERC20(ssv_token).transfer(proxy, amount)) {
+            revert("failed to transfer SSV amount");
+        }
+
         // approve for ssv contract
-        if (!IERC20(ssv_token).approve(ssv_network, amount)) {
+        if (!EntityProxy(proxy).approveForSSV(amount)) {
             revert("failed to approve SSV amount");
         }
 
@@ -192,7 +204,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         require(_entities.capacityArray().greedyClusterCalculation() >= sharesData.length, "not enough capacity");
 
         // register validators
-        ISSVClusters(ssv_network).bulkRegisterValidator(
+        ISSVClusters(proxy).bulkRegisterValidator(
             publicKeys,
             operatorIds,
             sharesData,
@@ -201,10 +213,9 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         );
 
         // reduce capacity
-        entities[operator_to_entity_index[operatorIds[0]]].capacity -= sharesData.length;
-        entities[operator_to_entity_index[operatorIds[1]]].capacity -= sharesData.length;
-        entities[operator_to_entity_index[operatorIds[2]]].capacity -= sharesData.length;
-        entities[operator_to_entity_index[operatorIds[3]]].capacity -= sharesData.length;
+        for (uint i=0 ; i < operatorIds.length; i++) {
+            entities[operator_to_entity_index[operatorIds[i]]].capacity -= sharesData.length;
+        }
     }
 
     /// @notice Removes an existing validator from the SSV Network
@@ -228,13 +239,12 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         require(operatorIds.length == 4, "registering validator requires 4 entities");
 
         // remove
-        ISSVClusters(ssv_network).bulkRemoveValidator(publicKeys, operatorIds, cluster);
+        ISSVClusters(entities[entity_address_to_index[msg.sender]].proxy).bulkRemoveValidator(publicKeys, operatorIds, cluster);
 
         // increase capacity
-        entities[operator_to_entity_index[operatorIds[0]]].capacity += publicKeys.length;
-        entities[operator_to_entity_index[operatorIds[1]]].capacity += publicKeys.length;
-        entities[operator_to_entity_index[operatorIds[2]]].capacity += publicKeys.length;
-        entities[operator_to_entity_index[operatorIds[3]]].capacity += publicKeys.length;
+        for (uint i=0 ; i < operatorIds.length; i++) {
+            entities[operator_to_entity_index[operatorIds[i]]].capacity += publicKeys.length;
+        }
     }
 
     /**************************/
@@ -249,16 +259,16 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         require(operatorIds.length == 4, "registering validator requires 4 entities");
 
         // liquidate
-        ISSVClusters(ssv_network).liquidate(address(this), operatorIds, cluster);
+        address proxy = entities[entity_address_to_index[msg.sender]].proxy;
+        ISSVClusters(proxy).liquidate(proxy, operatorIds, cluster);
 
         // increase capacity
-        entities[operator_to_entity_index[operatorIds[0]]].capacity += cluster.validatorCount;
-        entities[operator_to_entity_index[operatorIds[1]]].capacity += cluster.validatorCount;
-        entities[operator_to_entity_index[operatorIds[2]]].capacity += cluster.validatorCount;
-        entities[operator_to_entity_index[operatorIds[3]]].capacity += cluster.validatorCount;
+        for (uint i=0 ; i < operatorIds.length; i++) {
+            entities[operator_to_entity_index[operatorIds[i]]].capacity += cluster.validatorCount;
+        }
 
         // transfer from contract to user's account to contract
-        if (!IERC20(ssv_token).transfer(msg.sender, cluster.balance)) {
+        if (!EntityProxy(proxy).transferSSV(msg.sender, cluster.balance)) {
             revert("failed to transfer SSV amount back to user");
         }
     }

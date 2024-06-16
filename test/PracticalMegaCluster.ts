@@ -4,16 +4,20 @@ import {GenerateOperator, encodePK} from "./helpers/operators";
 import {initializePMCContract} from "./helpers/common";
 import {bulkRegisterValidatorsData, owners} from "./helpers/ssv";
 
+
+
 describe("Practical Mega Cluster", function () {
     let practicalMegaCluster: any;
     let ssvNetwork: any;
     let ssvToken: any;
+    let entities: any;
 
     beforeEach(async function () {
         const data = await initializePMCContract();
         practicalMegaCluster = data.pmc;
         ssvNetwork = data.ssv.ssvNetwork;
         ssvToken = data.ssv.ssvToken;
+        entities = data.entities;
     });
 
     describe("Deployment", function () {
@@ -34,6 +38,9 @@ describe("Practical Mega Cluster", function () {
             await expect(tx)
                 .to.emit(practicalMegaCluster, 'Transfer')
                 .withArgs('0x0000000000000000000000000000000000000000',addresses[0],73890461584 /* e^(2*1000/1000 */);
+
+            const events = await ssvNetwork.getEvents["OperatorAdded"]();
+            expect(events.length).to.equal(1);
 
             expect(await practicalMegaCluster.getCapacity()).to.equal(0);
         });
@@ -100,7 +107,7 @@ describe("Practical Mega Cluster", function () {
             expect(events.length).to.equal(numberOfValidators);
             expect(events[0].args.publicKey).to.deep.equal('0xa063fa1434f4ae9bb63488cd79e2f76dea59e0e2d6cdec7236c2bb49ffb37da37cb7966be74eca5a171f659fee7bc501');
             expect(events[0].args.operatorIds).to.deep.equal([1,2,3,4])
-            expect(events[0].args.owner).to.deep.equal(await practicalMegaCluster.getAddress())
+            expect(events[0].args.owner).to.deep.equal(entities[0][1]) // the proxy contract
             expect(events[1].args.publicKey).to.deep.equal('0x821b022611c3cdea28669683ec80a930533633fe7b3489d70fdacf68044661ee2bca1d17d3d095c05f639ebe3108784c');
             expect(events[1].args.operatorIds).to.deep.equal([1,2,3,4])
             expect(events[2].args.publicKey).to.deep.equal('0x88ab00343b787f87de60d1e8a552a69ab5fb3525128c53d68e78a3fe2e157bcce75e96a87e8968460087927552a3c891');
@@ -163,8 +170,8 @@ describe("Practical Mega Cluster", function () {
             const events = await ssvNetwork.getEvents["ValidatorRemoved"]();
             expect(events.length).to.equal(2);
             expect(events[0].args.publicKey).to.deep.equal('0xa063fa1434f4ae9bb63488cd79e2f76dea59e0e2d6cdec7236c2bb49ffb37da37cb7966be74eca5a171f659fee7bc501');
-            expect(events[0].args.operatorIds).to.deep.equal([1,2,3,4])
-            expect(events[0].args.owner).to.deep.equal(await practicalMegaCluster.getAddress())
+            expect(events[0].args.operatorIds).to.deep.equal([1,2,3,4]);
+            expect(events[0].args.owner).to.deep.equal(entities[0][1]); // the proxy contract
             expect(events[1].args.publicKey).to.deep.equal('0x821b022611c3cdea28669683ec80a930533633fe7b3489d70fdacf68044661ee2bca1d17d3d095c05f639ebe3108784c');
             expect(events[1].args.operatorIds).to.deep.equal([1,2,3,4])
         });

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 library EntityArray {
     struct Entity {
         address owner;
+        address proxy;
         uint capacity;
     }
 
