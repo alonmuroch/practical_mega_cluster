@@ -32,13 +32,10 @@ describe("Practical Mega Cluster", function () {
             const tx = practicalMegaCluster.connect(addresses[0]).registerOperator(encodedPK,0);
 
             await expect(tx)
-                .to.emit(practicalMegaCluster, "CapacityUpdated")
-                .withArgs(0)
-                .and.to.emit(practicalMegaCluster, 'Transfer')
+                .to.emit(practicalMegaCluster, 'Transfer')
                 .withArgs('0x0000000000000000000000000000000000000000',addresses[0],73890461584 /* e^(2*1000/1000 */);
 
-            var capacity = await practicalMegaCluster.capacity();
-            expect(capacity).to.equal(0);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(0);
         });
 
         it("Register operator and increase capacity", async function () {
@@ -54,14 +51,11 @@ describe("Practical Mega Cluster", function () {
 
                 const tx = practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
                 await expect(tx)
-                    .to.emit(practicalMegaCluster, "CapacityUpdated")
-                    .withArgs(expectedCapacity)
-                    .and.to.emit(practicalMegaCluster, 'Transfer')
+                    .to.emit(practicalMegaCluster, 'Transfer')
                     .withArgs('0x0000000000000000000000000000000000000000',addresses[i],73890461584 /* e^(2*1000/1000 */);
             }
 
-            var capacity = await practicalMegaCluster.capacity();
-            expect(capacity).to.equal(500);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(500);
         });
 
         it("Register validators", async function () {
@@ -76,8 +70,7 @@ describe("Practical Mega Cluster", function () {
                 await tx.wait();
             }
 
-            var capacity = await practicalMegaCluster.capacity();
-            expect(capacity).to.equal(500);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(500);
 
             // register validators
             const numberOfValidators = 10;
@@ -88,7 +81,7 @@ describe("Practical Mega Cluster", function () {
                 1000000000000000n
             )
 
-            const tx = practicalMegaCluster.connect(addresses[0]).bulkRegisterValidator(
+            await practicalMegaCluster.connect(addresses[0]).bulkRegisterValidator(
                 data.pks,
                 data.operatorIds,
                 data.shares,
@@ -101,9 +94,7 @@ describe("Practical Mega Cluster", function () {
                     active: true,
                 }
             );
-            await expect(tx)
-                .to.emit(practicalMegaCluster, "CapacityUpdated")
-                .withArgs(500-numberOfValidators);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(500-numberOfValidators);
 
             const events = await ssvNetwork.getEvents["ValidatorAdded"]();
             expect(events.length).to.equal(numberOfValidators);
@@ -153,7 +144,7 @@ describe("Practical Mega Cluster", function () {
                 }
             );
 
-            const tx = practicalMegaCluster.connect(addresses[0]).bulkRemoveValidator(
+            await practicalMegaCluster.connect(addresses[0]).bulkRemoveValidator(
                 ['0xa063fa1434f4ae9bb63488cd79e2f76dea59e0e2d6cdec7236c2bb49ffb37da37cb7966be74eca5a171f659fee7bc501',
                 '0x821b022611c3cdea28669683ec80a930533633fe7b3489d70fdacf68044661ee2bca1d17d3d095c05f639ebe3108784c'],
                 [1,2,3,4],
@@ -167,9 +158,7 @@ describe("Practical Mega Cluster", function () {
             )
 
 
-            await expect(tx)
-                .to.emit(practicalMegaCluster, "CapacityUpdated")
-                .withArgs(492);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(492);
 
             const events = await ssvNetwork.getEvents["ValidatorRemoved"]();
             expect(events.length).to.equal(2);
@@ -215,7 +204,7 @@ describe("Practical Mega Cluster", function () {
                 }
             );
 
-            const tx = practicalMegaCluster.connect(addresses[0]).liquidate(
+            await practicalMegaCluster.connect(addresses[0]).liquidate(
                 addresses[0].address,
                 [1,2,3,4],
                 {
@@ -228,9 +217,7 @@ describe("Practical Mega Cluster", function () {
             )
 
 
-            await expect(tx)
-                .to.emit(practicalMegaCluster, "CapacityUpdated")
-                .withArgs(500);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(500);
 
             const events = await ssvNetwork.getEvents["ClusterLiquidated"]();
             expect(events.length).to.equal(1);
@@ -264,8 +251,7 @@ describe("Practical Mega Cluster", function () {
                 await tx2.wait();
             }
 
-            var capacity = await practicalMegaCluster.capacity();
-            expect(capacity).to.equal(1000);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(1000);
 
             var shareValue = await practicalMegaCluster.getShareValue();
             expect(shareValue).to.equal(100000);
@@ -290,8 +276,7 @@ describe("Practical Mega Cluster", function () {
                 await tx3.wait();
             }
 
-            var capacity = await practicalMegaCluster.capacity();
-            expect(capacity).to.equal(1500);
+            expect(await practicalMegaCluster.getCapacity()).to.equal(1500);
 
             var shareValue = await practicalMegaCluster.getShareValue();
             expect(shareValue).to.equal(100000);

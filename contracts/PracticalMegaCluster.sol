@@ -27,14 +27,11 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     mapping(address => uint) public entity_address_to_index;
     EntityArray.Entity[] public entities;
     mapping(uint => uint) public operator_to_entity_index;
-    uint public capacity;
 
     modifier onlyEntity() {
         require(entities[entity_address_to_index[msg.sender]].owner == msg.sender, "entity not registered");
         _;
     }
-
-    event CapacityUpdated(uint newCapacity);
 
     constructor(
         address _ssv_network,
@@ -70,7 +67,11 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     }
 
     function getShareValue() public view returns (uint) {
-        return capacity.shareValue(C0, K);
+        return getCapacity().shareValue(C0, K);
+    }
+
+    function getCapacity() public view returns (uint) {
+        return entities.capacityArray().greedyClusterCalculation();
     }
 
     // ##### ISSVOperators
@@ -87,9 +88,6 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         _mint(msg.sender, getShareValue());
 
         entities[entity_address_to_index[msg.sender]].capacity += NEW_OPERATOR_CAPACITY;
-        capacity = entities.capacityArray().greedyClusterCalculation();
-
-        emit CapacityUpdated(capacity);
     }
 
     /// @notice Removes an existing operator
@@ -176,9 +174,6 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         uint256 amount,
         Cluster memory cluster
     ) onlyEntity external {
-        require(operatorIds.length == 4, "registering validator requires 4 entities");
-        // operators uniqueness is tested when registering validators
-
         // transfer from user's account to contract
         if (!IERC20(ssv_token).transferFrom(msg.sender,address(this), amount)) {
             revert("failed to transfer SSV amount");
@@ -191,10 +186,9 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
 
         // validate capacity
         EntityArray.Entity[] memory _entities =  new EntityArray.Entity[](4);
-        _entities[0] = entities[operator_to_entity_index[operatorIds[0]]];
-        _entities[1] = entities[operator_to_entity_index[operatorIds[1]]];
-        _entities[2] = entities[operator_to_entity_index[operatorIds[2]]];
-        _entities[3] = entities[operator_to_entity_index[operatorIds[3]]];
+        for (uint i=0 ; i < operatorIds.length; i++) {
+            _entities[i] = entities[operator_to_entity_index[operatorIds[i]]];
+        }
         require(_entities.capacityArray().greedyClusterCalculation() >= sharesData.length, "not enough capacity");
 
         // register validators
@@ -211,11 +205,6 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         entities[operator_to_entity_index[operatorIds[1]]].capacity -= sharesData.length;
         entities[operator_to_entity_index[operatorIds[2]]].capacity -= sharesData.length;
         entities[operator_to_entity_index[operatorIds[3]]].capacity -= sharesData.length;
-
-        // recalculate capacity
-        capacity = entities.capacityArray().greedyClusterCalculation();
-
-        emit CapacityUpdated(capacity);
     }
 
     /// @notice Removes an existing validator from the SSV Network
@@ -246,11 +235,6 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         entities[operator_to_entity_index[operatorIds[1]]].capacity += publicKeys.length;
         entities[operator_to_entity_index[operatorIds[2]]].capacity += publicKeys.length;
         entities[operator_to_entity_index[operatorIds[3]]].capacity += publicKeys.length;
-
-        // recalculate capacity
-        capacity = entities.capacityArray().greedyClusterCalculation();
-
-        emit CapacityUpdated(capacity);
     }
 
     /**************************/
@@ -277,11 +261,6 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         if (!IERC20(ssv_token).transfer(msg.sender, cluster.balance)) {
             revert("failed to transfer SSV amount back to user");
         }
-
-        // recalculate capacity
-        capacity = entities.capacityArray().greedyClusterCalculation();
-
-        emit CapacityUpdated(capacity);
     }
 
     /// @notice Reactivates a cluster
