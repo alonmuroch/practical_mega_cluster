@@ -2,6 +2,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// EntityProxy aims to create an "owner" for registered validators/ operators such that each mega cluster entity could manage their own
 contract EntityProxy {
     address mega_cluster;
     address ssv_network;

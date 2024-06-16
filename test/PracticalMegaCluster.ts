@@ -176,6 +176,66 @@ describe("Practical Mega Cluster", function () {
             expect(events[1].args.operatorIds).to.deep.equal([1,2,3,4])
         });
 
+        it("Try Remove validators (not by owner)", async function () {
+            // register operators
+            const addresses = (await ethers.getSigners()).slice(0,6);
+
+            for (let i = 0; i < 4; i++) {
+                const {pk} = GenerateOperator();
+                const encodedPK = "0x"+encodePK(pk)
+
+                const tx = await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+                await tx.wait();
+            }
+
+            // register validators
+            const numberOfValidators = 10;
+            const data = await bulkRegisterValidatorsData(
+                1,
+                numberOfValidators,
+                [1,2,3,4],
+                1000000000000000n
+            )
+
+            await practicalMegaCluster.connect(addresses[0]).bulkRegisterValidator(
+                data.pks,
+                data.operatorIds,
+                data.shares,
+                data.depositAmount,
+                {
+                    validatorCount: 0,
+                    networkFeeIndex: 0,
+                    index: 0,
+                    balance: 0n,
+                    active: true,
+                }
+            );
+
+            try {
+                await practicalMegaCluster.connect(addresses[1]).bulkRemoveValidator(
+                    ['0xa063fa1434f4ae9bb63488cd79e2f76dea59e0e2d6cdec7236c2bb49ffb37da37cb7966be74eca5a171f659fee7bc501',
+                        '0x821b022611c3cdea28669683ec80a930533633fe7b3489d70fdacf68044661ee2bca1d17d3d095c05f639ebe3108784c'],
+                    [1,2,3,4],
+                    {
+                        validatorCount: 10,
+                        networkFeeIndex: 0,
+                        index: 0,
+                        balance: 10000000000000000n,
+                        active: true,
+                    }
+                )
+            } catch (error) {
+                expect(error.message).to.include("Transaction reverted without a reason");
+                // TODO - more specific error?
+            }
+
+
+            expect(await practicalMegaCluster.getCapacity()).to.equal(490);
+
+            const events = await ssvNetwork.getEvents["ValidatorRemoved"]();
+            expect(events.length).to.equal(0);
+        });
+
         it("Liquidate cluster", async function () {
             // register operators
             const addresses = (await ethers.getSigners()).slice(0,6);
