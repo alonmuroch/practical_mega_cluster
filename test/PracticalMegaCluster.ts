@@ -101,7 +101,12 @@ describe("Practical Mega Cluster", function () {
                     active: true,
                 }
             );
+
+            // expected capacity
             expect(await practicalMegaCluster.getCapacity()).to.equal(500-numberOfValidators);
+
+            // expected balance
+            expect(await ssvToken.read.balanceOf([addresses[0].address])).to.equal("999990000000000000000");
 
             const events = await ssvNetwork.getEvents["ValidatorAdded"]();
             expect(events.length).to.equal(numberOfValidators);
@@ -284,10 +289,15 @@ describe("Practical Mega Cluster", function () {
             )
 
 
+            // expected capacity
             expect(await practicalMegaCluster.getCapacity()).to.equal(500);
 
+            // expected event
             const events = await ssvNetwork.getEvents["ClusterLiquidated"]();
             expect(events.length).to.equal(1);
+
+            // expected balance
+            expect(await ssvToken.read.balanceOf([addresses[0].address])).to.equal("1000000000000000000000");
         });
 
         it("share value (under C0)", async function () {
