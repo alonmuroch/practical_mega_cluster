@@ -358,5 +358,19 @@ describe("Practical Mega Cluster", function () {
             var shareValue = await practicalMegaCluster.getShareValue();
             expect(shareValue).to.equal(100000);
         });
+
+        it("Transfer share token", async function () {
+            const addresses = (await ethers.getSigners()).slice(0,6);
+            const {pk} = GenerateOperator();
+            const encodedPK = "0x"+encodePK(pk)
+
+            await practicalMegaCluster.connect(addresses[0]).registerOperator(encodedPK,0);
+
+            try {
+                await practicalMegaCluster.connect(addresses[0]).transfer(addresses[1], 10000);
+            } catch (error) {
+                expect(error.message).to.include("shares are not transferable");
+            }
+        });
     })
 })

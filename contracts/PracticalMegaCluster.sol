@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.9;
 
 import "ssv-network/contracts/interfaces/ISSVClusters.sol";
@@ -65,6 +66,20 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         }
     }
 
+    // ##### ERC20
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+        revert("shares are not transferable");
+        return false;
+    }
+
     // ##### Views
     function getEntities() public view returns (EntityArray.Entity[] memory) {
         return entities;
@@ -97,53 +112,53 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
 
     /// @notice Removes an existing operator
     /// @param operatorId The ID of the operator to be removed
-    function removeOperator(uint64 operatorId) external {
+    function removeOperator(uint64 operatorId) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Declares the operator's fee
     /// @param operatorId The ID of the operator
     /// @param fee The fee to be declared (SSV)
-    function declareOperatorFee(uint64 operatorId, uint256 fee) external {
+    function declareOperatorFee(uint64 operatorId, uint256 fee) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Executes the operator's fee
     /// @param operatorId The ID of the operator
-    function executeOperatorFee(uint64 operatorId) external {
+    function executeOperatorFee(uint64 operatorId) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Cancels the declared operator's fee
     /// @param operatorId The ID of the operator
-    function cancelDeclaredOperatorFee(uint64 operatorId) external {
+    function cancelDeclaredOperatorFee(uint64 operatorId) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Reduces the operator's fee
     /// @param operatorId The ID of the operator
     /// @param fee The new Operator's fee (SSV)
-    function reduceOperatorFee(uint64 operatorId, uint256 fee) external {
+    function reduceOperatorFee(uint64 operatorId, uint256 fee) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Withdraws operator earnings
     /// @param operatorId The ID of the operator
     /// @param tokenAmount The amount of tokens to withdraw (SSV)
-    function withdrawOperatorEarnings(uint64 operatorId, uint256 tokenAmount) external {
+    function withdrawOperatorEarnings(uint64 operatorId, uint256 tokenAmount) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Withdraws all operator earnings
     /// @param operatorId The ID of the operator
-    function withdrawAllOperatorEarnings(uint64 operatorId) external {
+    function withdrawAllOperatorEarnings(uint64 operatorId) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Sets the whitelist for an operator
     /// @param operatorId The ID of the operator
     /// @param whitelisted The address to be whitelisted
-    function setOperatorWhitelist(uint64 operatorId, address whitelisted) external{
+    function setOperatorWhitelist(uint64 operatorId, address whitelisted) pure external{
         revert("Function not implemented");
     }
 
@@ -162,7 +177,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         bytes calldata sharesData,
         uint256 amount,
         Cluster memory cluster
-    ) external {
+    ) pure external {
         revert("Function not implemented");
     }
 
@@ -222,7 +237,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     /// @param publicKey The public key of the validator to be removed
     /// @param operatorIds Array of IDs of operators managing the validator
     /// @param cluster Cluster associated with the validator
-    function removeValidator(bytes calldata publicKey, uint64[] memory operatorIds, Cluster memory cluster) onlyEntity external {
+    function removeValidator(bytes calldata publicKey, uint64[] memory operatorIds, Cluster memory cluster) onlyEntity view external {
         revert("Function not implemented");
     }
 
@@ -277,7 +292,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     /// @param operatorIds Array of IDs of operators managing the cluster
     /// @param amount Amount of SSV tokens to be deposited for reactivation
     /// @param cluster Cluster to be reactivated
-    function reactivate(uint64[] memory operatorIds, uint256 amount, Cluster memory cluster) external {
+    function reactivate(uint64[] memory operatorIds, uint256 amount, Cluster memory cluster) pure external {
         revert("Function not implemented");
     }
 
@@ -290,7 +305,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     /// @param operatorIds Array of IDs of operators managing the cluster
     /// @param amount Amount of SSV tokens to be deposited
     /// @param cluster Cluster where the deposit will be made
-    function deposit(address owner, uint64[] memory operatorIds, uint256 amount, Cluster memory cluster) external {
+    function deposit(address owner, uint64[] memory operatorIds, uint256 amount, Cluster memory cluster) pure external {
         revert("Function not implemented");
     }
 
@@ -298,21 +313,21 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     /// @param operatorIds Array of IDs of operators managing the cluster
     /// @param tokenAmount Amount of SSV tokens to be withdrawn
     /// @param cluster Cluster where the withdrawal will be made
-    function withdraw(uint64[] memory operatorIds, uint256 tokenAmount, Cluster memory cluster) external {
+    function withdraw(uint64[] memory operatorIds, uint256 tokenAmount, Cluster memory cluster) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Fires the exit event for a validator
     /// @param publicKey The public key of the validator to be exited
     /// @param operatorIds Array of IDs of operators managing the validator
-    function exitValidator(bytes calldata publicKey, uint64[] calldata operatorIds) external {
+    function exitValidator(bytes calldata publicKey, uint64[] calldata operatorIds) pure external {
         revert("Function not implemented");
     }
 
     /// @notice Fires the exit event for a set of validators
     /// @param publicKeys The public keys of the validators to be exited
     /// @param operatorIds Array of IDs of operators managing the validators
-    function bulkExitValidator(bytes[] calldata publicKeys, uint64[] calldata operatorIds) external {
+    function bulkExitValidator(bytes[] calldata publicKeys, uint64[] calldata operatorIds) pure external {
         revert("Function not implemented");
     }
 }
