@@ -50,4 +50,4 @@ Each entity will have its own "EntityProxy.sol" contract that will isolate its v
 npm run test 
 ```
 
-[gas report](./gas_report.md)
+[gas report](./gas_report.txt)

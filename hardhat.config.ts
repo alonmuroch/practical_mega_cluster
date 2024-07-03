@@ -29,7 +29,7 @@ const config: HardhatUserConfig = {
     currency: 'USD',
     L1: "ethereum",
     enabled: true,
-    outputFile: "./gas_report.md",
+    outputFile: "./gas_report.txt",
     forceTerminalOutput: true,
     forceTerminalOutputFormat: "terminal"
   },
