@@ -21,6 +21,8 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
     address public ssv_network;
     address public ssv_token;
 
+    uint public fee; // percent of 100
+
     uint256 public constant MAX_ENTITY = 6;
     uint256 public constant NEW_OPERATOR_CAPACITY = 500;
     uint256 public K;
@@ -50,6 +52,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         ssv_token = _ssv_token;
         K = _k;
         C0 = _C0;
+        fee = 10; // TODO in constructor
 
         // initialize entities
         for (uint i=0 ; i < _entities.length; i++) {
@@ -63,6 +66,25 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
                 capacity: 0
                 })
             );
+        }
+    }
+
+    // ##### IM rewards
+
+    /**
+        Requires a pre-claim from the merkle distributor to the proxy contract (see https://github.com/ssvlabs/ssv-rewards?tab=readme-ov-file)
+    */
+    function claimRewards(uint256 amount) external onlyEntity {
+        uint entity_index = entity_address_to_index[msg.sender];
+
+        // transfer from proxy to contract
+        if (!EntityProxy(entities[entity_index].proxy).transferSSV(address(this), amount)) {
+            revert("failed to transfer SSV amount");
+        }
+
+        // send to sender amount minus fee
+        if (!ERC20(ssv_token).transfer(msg.sender, (amount*(100-fee)/100))) {
+            revert("failed to transfer SSV amount");
         }
     }
 

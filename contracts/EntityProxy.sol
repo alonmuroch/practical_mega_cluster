@@ -61,4 +61,4 @@ contract EntityProxy {
         }
         return true;
     }
-    }
+}
