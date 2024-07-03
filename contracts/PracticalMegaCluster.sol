@@ -5,15 +5,15 @@ import "ssv-network/contracts/interfaces/ISSVClusters.sol";
 import "ssv-network/contracts/interfaces/ISSVOperators.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./libraries/UintArray.sol";
 import "./libraries/EntityArray.sol";
 import "./libraries/Shares.sol";
 import "hardhat/console.sol";
 import "./EntityProxy.sol";
+import "./WithdrawManager.sol";
 
-contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
+contract PracticalMegaCluster is WithdrawManager, ISSVOperators, ISSVClusters {
     using UintArray for uint[];
     using EntityArray for EntityArray.Entity[];
     using Shares for uint;
@@ -43,7 +43,7 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
         address[] memory _entities,
         uint _k,
         uint _C0
-    ) ERC20("Mega Cluster Share", "PMC") {
+    ) WithdrawManager() {
         require(_entities.length <= MAX_ENTITY,"maxed out entities");
         require(_entities.length >= 4,"min 4 entities");
 
@@ -82,24 +82,25 @@ contract PracticalMegaCluster is ERC20, ISSVOperators, ISSVClusters {
             revert("failed to transfer SSV amount");
         }
 
+        uint fee = amount*fee/100;
+
         // send to sender amount minus fee
-        if (!ERC20(ssv_token).transfer(msg.sender, (amount*(100-fee)/100))) {
+        if (!ERC20(ssv_token).transfer(msg.sender, amount-fee)) {
             revert("failed to transfer SSV amount");
         }
+
+        markDeposit(fee);
     }
 
-    // ##### ERC20
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address to, uint256 amount) public virtual override returns (bool) {
-        revert("shares are not transferable");
-        return false;
+    function withdraw() external onlyEntity {
+        uint b = availableBalance(msg.sender);
+
+        // send to sender amount
+        if (!ERC20(ssv_token).transfer(msg.sender, b)) {
+            revert("failed to transfer SSV amount");
+        }
+
+        markWithdrawal(msg.sender, b);
     }
 
     // ##### Views

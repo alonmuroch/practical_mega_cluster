@@ -68,5 +68,40 @@ describe("Practical Mega Cluster", function () {
         expect(events[1].args.from).to.deep.equal(megaClusterAddress);
         expect(events[1].args.to).to.deep.equal(addresses[0].address);
         expect(events[1].args.value).to.deep.equal(4500000n);
+
+        // check final balance for mega cluster
+        expect(await ssvToken.read.balanceOf([megaClusterAddress])).to.equal('500000');
+        // check withdraw index increment
+        expect(await practicalMegaCluster.getBalanceIndex()).to.equal(500000);
+    });
+
+    it("Withdraw", async function () {
+        const addresses = (await ethers.getSigners()).slice(0,6);
+
+        // register operators
+        for (let i = 0; i < 4; i++) {
+            const {pk} = GenerateOperator();
+            const encodedPK = "0x"+encodePK(pk)
+
+            await practicalMegaCluster.connect(addresses[i]).registerOperator(encodedPK,0);
+        }
+
+        // transfer to proxy to simulate claim
+        await ssvToken.write.transfer([entities[0].proxy, 5000000],{
+            account: addresses[1]
+        });
+
+        // claim
+        await practicalMegaCluster.connect(addresses[0]).claimRewards(5000000);
+
+        // check available balance
+        expect(await practicalMegaCluster.availableBalance(addresses[0])).to.equal(125000);
+
+        // withdraw
+        await practicalMegaCluster.connect(addresses[0]).withdraw();
+        const events = await ssvToken.getEvents["Transfer"]();
+        expect(events.length).to.equal(1);
+        expect(events[0].args.to).to.deep.equal(addresses[0].address);
+        expect(events[0].args.value).to.deep.equal(125000);
     });
 })
