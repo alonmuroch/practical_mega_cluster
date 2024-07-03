@@ -29,6 +29,9 @@ const config: HardhatUserConfig = {
     currency: 'USD',
     L1: "ethereum",
     enabled: true,
+    outputFile: "./gas_report.md",
+    forceTerminalOutput: true,
+    forceTerminalOutputFormat: "terminal"
   },
   networks: {
     hardhat:{
